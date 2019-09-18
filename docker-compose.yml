@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+  liquidsoap:
+    image: privyplace/liquidsoap:master
+    container_name: liquidsoap
+    restart: unless-stopped
+    networks:
+      - default
+    ports:
+      - 10000:10000/udp
+    volumes:
+     - ./radio:/radio
+     - ./hls:/hls
+
+  nginx:
+    image: privyplace/nginx
+    container_name: nginx
+    restart: unless-stopped
+    networks:
+     - default
+    ports:
+     - 8080:80/tcp
+    volumes:
+     - ./hls:/hls
+
+networks:
+  default:
