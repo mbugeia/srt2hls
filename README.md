@@ -53,7 +53,7 @@ Requirement : ffmpeg compiled with srt support (the one on liquidsoap debian/ubu
 # static file
 ffmpeg -re -i $AUDIOFILE -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 # live stream
-ffmpeg -i $LIVESTREAM -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
+ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ```
 
 ## Development

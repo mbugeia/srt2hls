@@ -25,6 +25,6 @@ deb http://deb.debian.org/debian buster-updates main contrib non-free\n \
 
 USER radio
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "liquidsoap"]
 
-CMD ["liquidsoap", "/radio/live.liq"]
+CMD ["/radio/live.liq"]

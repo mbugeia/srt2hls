@@ -10,6 +10,7 @@ services:
         buildnumber: 2045
     image: privyplace/liquidsoap:master-1.4.0-2045
     container_name: liquidsoap
+    command: /radio/live.liq
     restart: unless-stopped
     networks:
       - default
