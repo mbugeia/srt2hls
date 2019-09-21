@@ -30,6 +30,7 @@ sudo docker run -it --rm -v $(pwd)/hls:/hls -v $(pwd)/radio:/radio -p 10000:1000
 ### Local installation requirements
 
 https://www.liquidsoap.info/ 1.4.0+ (not released yet, use master)
+
 ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu repository is fine)
 
 
@@ -58,14 +59,15 @@ ffmpeg -i $LIVESTREAM -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ## Development
 
 ### Build images
+```bash
+sudo docker-compose build
 sudo docker build -t privyplace/nginx:latest ./nginx
 sudo docker build -t privyplace/liquidsoap:master ./liquidsoap
-
+```
 ## TODO
 
-[] Use dedicated user for liquidsoap
-[] Secure input : for now it can be hijacked by everyone who have access to the port 10000 of liquidsoap so only trusted network should be allowed as input.
-[] Script customization (templating and/or conf file/environment variables 
-[] Multiple input with priority logic
-[] External CDN export (s3, gcs,...)
-[] ...
+- [ ] Secure input : for now it can be hijacked by everyone who have access to the port 10000 of liquidsoap so only trusted network should be allowed as input.
+- [ ] Script customization (templating and/or conf file/environment variables 
+- [ ] Multiple input with priority logic
+- [ ] External CDN export (s3, gcs,...)
+- [ ] ...

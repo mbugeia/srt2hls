@@ -1,8 +1,14 @@
-version: "3.7"
+version: "3.0"
 
 services:
   liquidsoap:
-    image: privyplace/liquidsoap:master
+    build:
+      context: liquidsoap
+      args:
+        gitbranch: master
+        version: 1.4.0
+        buildnumber: 2045
+    image: privyplace/liquidsoap:master-1.4.0-2045
     container_name: liquidsoap
     restart: unless-stopped
     networks:
@@ -14,7 +20,9 @@ services:
      - ./hls:/hls
 
   nginx:
-    image: privyplace/nginx
+    build:
+      context: nginxhls
+    image: privyplace/nginxhls:latest
     container_name: nginx
     restart: unless-stopped
     networks:
