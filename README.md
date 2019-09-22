@@ -21,12 +21,6 @@ chown -R 2001:2000 hls
 sudo docker-compose up
 ```
 
-### With docker
-```bash
-sudo docker run -it --rm -v $(pwd)/hls:/hls -p 8080:80 privyplace/nginx
-sudo docker run -it --rm -v $(pwd)/hls:/hls -v $(pwd)/radio:/radio -p 10000:10000/udp privyplace/liquidsoap:master
-```
-
 ### Local installation requirements
 
 https://www.liquidsoap.info/ 1.4.0+ (not released yet, use master)
@@ -61,13 +55,7 @@ ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ### Build images
 ```bash
 sudo docker-compose build
-sudo docker build -t privyplace/nginx:latest ./nginx
-sudo docker build -t privyplace/liquidsoap:master ./liquidsoap
 ```
-## TODO
 
-- [ ] Secure input : for now it can be hijacked by everyone who have access to the port 10000 of liquidsoap so only trusted network should be allowed as input.
-- [ ] Script customization (templating and/or conf file/environment variables 
-- [ ] Multiple input with priority logic
-- [ ] External CDN export (s3, gcs,...)
-- [ ] ...
+### known issue
+ - HLS persistence doesn't work, maybe because of https://github.com/savonet/liquidsoap/issues/965
