@@ -6,12 +6,16 @@ Simple audio HLS streaming server.
 
 The goal of this program is to receive an audio stream with [SRT](https://github.com/Haivision/srt) and broadcast it with HLS. It can serve as a CDN origin server or as a set-and-forget streaming server.
 
-## Architecture
+## How it works
 
-live.liq
-Liquidsoap will listen an SRT stream on port 10000 and encode it
+srt2hls use [Liquidsoap](https://www.liquidsoap.info) to receive a stream and encode it in HLS, then it use [nginx] (https://www.nginx.com/) to serve HLS content.
 
-Nginx serve segments and playlist.
+The Liquidsoap container, by default, run radio/live.liq script. It's a fully functionnal example that will :
+1. Receive an SRT input on port 10000
+2. Encode it in aac with 3 quality
+3. Segment it in HLS format in /hls directory
+
+The Nginx container come with a specific configuration to serve HLS content with proper Content-Type, CORS and Cache-Control headers. It need read only access to /hls directory to serve HLS segments and playlists.
 
 ## Setup
 ### With docker compose
@@ -23,7 +27,7 @@ sudo docker-compose up
 
 ### Local installation requirements
 
-https://www.liquidsoap.info/ 1.4.0+ (not released yet, use master)
+[Liquidsoap](https://www.liquidsoap.info) 1.4.0+ (not released yet, use master)
 
 ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu repository is fine)
 
