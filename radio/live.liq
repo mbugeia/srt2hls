@@ -1,23 +1,73 @@
 #!/usr/bin/liquidsoap
 
 # General settings
+
 set("log.level",3)
 set("log.stdout", true)
 
 # Telnet server settings
-set("server.telnet.bind_addr", "127.0.0.1")
+
+set("server.telnet.bind_addr", "0.0.0.0")
 set("server.telnet.port", 8500)
 set("server.telnet", true)
 
 # Audio settings
+
 set("frame.audio.samplerate",44100)
 set("frame.audio.channels",2)
 set("audio.converter.samplerate.libsamplerate.quality","fast")
 
-# Input
-main = input.srt(port=10000)
+# Define inputs
 
-radio_prod = mksafe(main)
+
+srt1 = input.srt(port=10000)
+srt2 = input.srt(port=10001, clock_safe=false)
+
+# Radio logic
+
+play_srt1 = ref true
+play_srt2 = ref false
+
+def getlivesource(dummy) =
+  if !play_srt1 == true then
+    "Live source is srt1"
+  elsif !play_srt2 == true then
+    "Live source is srt2"
+  else
+    "Unknown live source, that s unexpected."
+  end
+end
+
+def setlivesource(source) =
+  if source == "srt1" then
+    play_srt1 := true
+    play_srt2 := false
+    "Live source set to srt1"
+  elsif source == "srt2" then
+    play_srt1 := false
+    play_srt2 := true
+    "Live source set to srt2"
+  else
+    "Unknown source, doing nothing."
+  end
+end
+
+server.register(description="Get live source", 
+                usage= "getlivesource",
+                "getlivesource", 
+                getlivesource)
+
+server.register(description="Set live source", 
+                usage= "setlivesource <livesource>",
+                "setlivesource", 
+                setlivesource)
+
+radio_prod = mksafe(switch(track_sensitive=false, [
+                          ({!play_srt1},srt1), 
+                          ({!play_srt2},srt2)
+                          ]))
+
+# Define output formats
 
 aac_lofi = %ffmpeg(format="mpegts",
                    codec="libfdk_aac",
