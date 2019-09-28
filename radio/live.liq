@@ -40,13 +40,18 @@ play_srt2 = ref false
 
 def getlivesource(dummy) =
   if !play_srt1 == true then
-    "Live source is srt1"
+    "srt1"
   elsif !play_srt2 == true then
-    "Live source is srt2"
+    "srt2"
   else
     "Unknown live source, that s unexpected."
   end
 end
+
+server.register(description="Get live source", 
+                usage= "getlivesource",
+                "getlivesource", 
+                getlivesource)
 
 def setlivesource(source) =
   if source == "srt1" then
@@ -61,11 +66,6 @@ def setlivesource(source) =
     "Unknown source, doing nothing."
   end
 end
-
-server.register(description="Get live source", 
-                usage= "getlivesource",
-                "getlivesource", 
-                getlivesource)
 
 server.register(description="Set live source", 
                 usage= "setlivesource <livesource>",
