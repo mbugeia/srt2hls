@@ -38,8 +38,8 @@ ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu reposit
 By default the encoder send blank HLS segments, that mean if it's started, you can already listen the blank stream.
 
 ```bash
-ffplay http://127.0.0.1:8080
-vlc http://127.0.0.1:8080
+ffplay http://127.0.0.1:8080/live.m3u8
+vlc http://127.0.0.1:8080/live.m3u8
 ```
 
 ### Sending audio to the streaming server
@@ -60,6 +60,3 @@ ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ```bash
 sudo docker-compose build
 ```
-
-### known issue
- - HLS persistence doesn't work, maybe because of https://github.com/savonet/liquidsoap/issues/965
