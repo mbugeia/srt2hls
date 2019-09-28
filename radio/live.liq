@@ -20,8 +20,11 @@ set("audio.converter.samplerate.libsamplerate.quality","fast")
 # Define inputs
 
 
-srt1 = input.srt(port=10000)
-srt2 = input.srt(port=10001, clock_safe=false)
+srt1 = input.srt(id="input_srt1", 
+                 port=10000)
+srt2 = input.srt(id="input_srt2", 
+                 port=10001, 
+                 clock_safe=false)
 
 # Radio logic
 
@@ -62,10 +65,14 @@ server.register(description="Set live source",
                 "setlivesource", 
                 setlivesource)
 
-radio_prod = mksafe(switch(track_sensitive=false, [
-                          ({!play_srt1},srt1), 
-                          ({!play_srt2},srt2)
-                          ]))
+live = switch(id="switch_live", 
+              track_sensitive=false, 
+              [({!play_srt1},srt1), 
+              ({!play_srt2},srt2)])
+
+radio_prod = mksafe(fallback(id="fallback_prod",
+                             track_sensitive=false,
+                             [live, srt1, srt2]))
 
 # Define output formats
 
@@ -124,7 +131,8 @@ end
 #   end
 # end
 
-output.file.hls(playlist="live.m3u8",
+output.file.hls(id="output_hls",
+                playlist="live.m3u8",
                 segment_duration=2.0,
                 segments=5,
                 segments_overhead=5,
