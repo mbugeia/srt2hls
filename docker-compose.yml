@@ -7,8 +7,8 @@ services:
       args:
         gitbranch: master
         version: 1.4.0
-        buildnumber: 2045
-    image: privyplace/liquidsoap:master-1.4.0-2045
+        buildnumber: 2065
+    image: privyplace/liquidsoap:master-1.4.0-2065
     container_name: liquidsoap
     command: /radio/live.liq
     restart: unless-stopped
