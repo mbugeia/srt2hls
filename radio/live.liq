@@ -17,8 +17,15 @@ set("frame.audio.samplerate",44100)
 set("frame.audio.channels",2)
 set("audio.converter.samplerate.libsamplerate.quality","fast")
 
-# Define inputs
+# Retrieve configuration from environment
 
+hlspath = ref getenv("HLSPATH")
+
+if !hlspath == "" then
+  hlspath := "/hls"
+end
+
+# Define inputs
 
 srt1 = input.srt(id="input_srt1", 
                  port=10000)
@@ -140,7 +147,7 @@ output.file.hls(id="output_hls",
                 streams_info=streams_info,
                 persist=true,
                 persist_at="state.config",
-                "/hls",
+                !hlspath,
                 [("aac_lofi",aac_lofi), 
                  ("aac_midfi", aac_midfi), 
                  ("aac_hifi", aac_hifi)],
