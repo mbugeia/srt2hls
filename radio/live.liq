@@ -27,11 +27,17 @@ end
 
 # Define inputs
 
-srt1 = input.srt(id="input_srt1", 
-                 port=10000)
-srt2 = input.srt(id="input_srt2", 
-                 port=10001, 
-                 clock_safe=false)
+srt1 = buffer(id="buffer_srt1",
+              fallible=true, 
+              max=3.0,
+              input.srt(id="input_srt1", 
+                        port=10000))
+srt2 = buffer(id="buffer_srt2",
+              fallible=true, 
+              max=3.0,
+              input.srt(id="input_srt2", 
+                        port=10001, 
+                        clock_safe=false))
 
 # Radio logic
 
@@ -141,8 +147,8 @@ end
 output.file.hls(id="output_hls",
                 playlist="live.m3u8",
                 segment_duration=2.0,
-                segments=5,
-                segments_overhead=5,
+                segments=3,
+                segments_overhead=20,
                 segment_name=segment_name,
                 streams_info=streams_info,
                 persist=true,
