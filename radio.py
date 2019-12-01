@@ -4,14 +4,16 @@ import argparse
 import sys
 import telnetlib
 
+
 def remove_last_line_from_string(s):
     return s[:s.rfind('\n')]
 
-def send_tn_command(command, parameters=""):
+
+def send_tn_command(port, command, parameters=""):
     try:
-      tn = telnetlib.Telnet(host="127.0.0.1", port=8500)
-    except:
-      sys.exit("Failed to connect to telnet server, is liquidsoap running ?")
+        tn = telnetlib.Telnet(host="127.0.0.1", port=port)
+    except Exception:
+        sys.exit("Failed to connect to telnet server, is liquidsoap running ?")
 
     tn.write((command + " " + parameters + "\n").encode('ascii'))
     tn.write(b"exit\n")
@@ -21,6 +23,7 @@ def send_tn_command(command, parameters=""):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("port", help="telnet port")
     parser.add_argument("command", help="getlivesource, setlivesource <source>")
     parser.add_argument("parameters", nargs='?', default="", help="action parameters")
 
@@ -29,5 +32,4 @@ if __name__ == '__main__':
     if args.command == "setlivesource" and args.parameters == "":
         sys.exit("Error: you need to provide a livesource to switch to")
     else:
-        print(send_tn_command(args.command, args.parameters))
-
+        print(send_tn_command(args.port, args.command, args.parameters))
