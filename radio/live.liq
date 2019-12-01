@@ -11,11 +11,21 @@ set("server.telnet.bind_addr", "0.0.0.0")
 set("server.telnet.port", 8500)
 set("server.telnet", true)
 
+# Harbor HTTP server settings
+set("harbor.bind_addrs",["0.0.0.0"])
+set("harbor.max_connections",10)
+set("harbor.timeout",10.)
+set("harbor.verbose",false)
+
 # Audio settings
 
 set("frame.audio.samplerate",44100)
 set("frame.audio.channels",2)
 set("audio.converter.samplerate.libsamplerate.quality","fast")
+
+# Clocks settings
+set("root.max_latency",5.)
+set("clock.allow_streaming_errors",false)
 
 # Retrieve configuration from environment
 
@@ -61,6 +71,50 @@ end
 def is_playing(n) =
   fun () -> n == !live_source
 end
+
+
+def arghandler(arg) =
+  key = fst(arg)
+  value = snd(arg)
+  if key == "livesource" then
+    if not list.mem(value,input_list) then
+      log.important(label="arghandler", "Source #{value} does not exist! Doing nothing.")
+      "error - Source does not exist! Doing nothing."
+    else
+      live_source := value
+      log.important(label="arghandler", "Live source set to #{value}")
+      "Live source set to #{value}"
+    end
+  else
+    "error - Unrecognized argument #{key}! Doing nothing."
+  end
+end
+
+def sethttphandler(~protocol,~data,~headers,uri) =
+
+  req = fst(url.split(uri))
+  args = snd(url.split(uri))
+
+  if req == "/set" and args != [] and list.length(args) == 1 then
+    list.iter(fun(arg)-> arghandler(arg), args)
+    resp=json_of(args)
+    http_response(
+      code=200,
+      headers=[("Content-Type","application/json")],
+      data="#{resp}"
+    )
+  else
+    http_response(
+      code=400,
+      headers=[("Content-Type","application/json")],
+      data='{"error": "Bad request"}'
+    )
+  end
+
+
+end
+
+harbor.http.register(port=8081,method="GET","^/set",sethttphandler)
 
 server.register(description="Get live source",
                 usage= "getlivesource",

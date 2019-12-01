@@ -42,6 +42,15 @@ ffplay http://127.0.0.1:8080/live.m3u8
 vlc http://127.0.0.1:8080/live.m3u8
 ```
 
+### Switch live source
+
+The default script allow to switch the output between 2 input, srt1 and srt2.
+
+```bash
+curl http://127.0.0.1:8081/set?livesource=srt2
+curl http://127.0.0.1:8081/set?livesource=srt1
+```
+
 ### Sending audio to the streaming server
 
 #### Using ffmpeg
