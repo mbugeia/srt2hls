@@ -89,7 +89,7 @@ def getarghandler(arg) =
   let (key, _) = arg
   if key == "livesource" then
     value = !live_source
-    ("info", "Live source is #{value}", 200)
+    ("info", "Live source is set to #{value}", 200)
   else
     ("error", "Unrecognized argument #{key}", 400)
   end
@@ -110,16 +110,29 @@ def setarghandler(arg) =
   end
 end
 
+# Handle /list arguments
+def listarghandler(arg) =
+  let (key, _) = arg
+  if key == "livesource" then
+    list = string.concat(separator=", ",live_input_list)
+    ("info", "Available live source are: #{list}", 200)
+  else
+    ("error", "Unrecognized argument #{key}", 400)
+  end
+end
+
 # Define routes
 def routehandler(req, args) =
   if req == "/set" then
     if list.length(args) == 1 then
-      setarghandler(list.hd(default=("",""), args))
+      setarghandler(list.hd(default=("none",""), args))
     else
       ("error","Route #{req} only support 1 argument",400)
     end
   elsif req == "/get" then
     getarghandler(list.hd(default=("none",""), args))
+  elsif req == "/list" then
+    listarghandler(list.hd(default=("none",""), args))
   else
     ("error","Route #{req} does not exist",404)
   end
