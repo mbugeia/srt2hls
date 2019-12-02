@@ -121,7 +121,7 @@ def routehandler(req, args) =
   elsif req == "/get" then
     getarghandler(list.hd(default=("none",""), args))
   else
-    ("error","Route #{req} does not exist",400)
+    ("error","Route #{req} does not exist",404)
   end
 end
 
@@ -132,8 +132,7 @@ def httphandler(~protocol,~data,~headers,uri) =
   http_response(level, msg, code)
 end
 
-harbor.http.register(port=8081,method="GET","^/set",httphandler)
-harbor.http.register(port=8081,method="GET","^/get",httphandler)
+harbor.http.register(port=8081,method="GET","^/",httphandler)
 
 ### END HTTP API
 
