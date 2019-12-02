@@ -51,6 +51,11 @@ curl http://127.0.0.1:8081/set?livesource=srt2
 curl http://127.0.0.1:8081/set?livesource=srt1
 ```
 
+It possible to check the current lvie source by doing
+```bash
+curl http://127.0.0.1:8081/get?livesource
+```
+
 ### Sending audio to the streaming server
 
 #### Using ffmpeg
