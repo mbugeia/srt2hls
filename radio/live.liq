@@ -11,11 +11,21 @@ set("server.telnet.bind_addr", "0.0.0.0")
 set("server.telnet.port", 8500)
 set("server.telnet", true)
 
+# Harbor HTTP server settings
+set("harbor.bind_addrs",["0.0.0.0"])
+set("harbor.max_connections",10)
+set("harbor.timeout",10.)
+set("harbor.verbose",false)
+
 # Audio settings
 
 set("frame.audio.samplerate",44100)
 set("frame.audio.channels",2)
 set("audio.converter.samplerate.libsamplerate.quality","fast")
+
+# Clocks settings
+set("root.max_latency",5.)
+set("clock.allow_streaming_errors",false)
 
 # Retrieve configuration from environment
 
@@ -25,7 +35,7 @@ if !hlspath == "" then
   hlspath := "/hls"
 end
 
-# Define inputs
+### Inputs
 
 srt1 = buffer(id="buffer_srt1",
               fallible=true, 
@@ -39,14 +49,109 @@ srt2 = buffer(id="buffer_srt2",
                         port=10001, 
                         clock_safe=false))
 
-input_list = ["srt1", "srt2"]
+safe_blank = blank(id="safe_blank")
 
-# Radio logic
+live_input_list = ["srt1", "srt2"]
+
+### END Inputs
+
+### Radio logic
 
 live_source = ref "srt1"
 
+def is_playing(n) =
+  fun () -> n == !live_source
+end
+
+live = switch(id="switch_live", 
+              track_sensitive=false, 
+              [(is_playing("srt1"), srt1), 
+              (is_playing("srt2"), srt2)])
+
+radio_prod = fallback(id="fallback_prod",
+                             track_sensitive=false,
+                             [live, srt1, srt2, safe_blank])
+
+### END Radio logic
+
+### HTTP API
+
+# Define default http response
+def http_response(level="error",msg="Unknow error",code=500) =
+    log.important(label="httplog", "#{level} #{msg} #{code}")
+    http_response(code=code,
+                  headers=[("Content-Type","application/json")],
+                  data='{"level": #{json_of(level)}, "msg": #{json_of(msg)},"code": #{json_of(code)}}')
+end
+
+# Handle /get arguments
+def getarghandler(arg) =
+  let (key, _) = arg
+  if key == "livesource" then
+    value = !live_source
+    ("info", "Live source is set to #{value}", 200)
+  else
+    ("error", "Unrecognized argument #{key}", 400)
+  end
+end
+
+# Handle /set arguments
+def setarghandler(arg) =
+  let (key, value) = arg
+  if key == "livesource" then
+    if not list.mem(value,live_input_list) then
+      ("error", "Source #{value} does not exist", 400)
+    else
+      live_source := value
+      ("info", "Live source set to #{value}", 200)
+    end
+  else
+    ("error", "Unrecognized argument #{key}", 400)
+  end
+end
+
+# Handle /list arguments
+def listarghandler(arg) =
+  let (key, _) = arg
+  if key == "livesource" then
+    list = string.concat(separator=", ",live_input_list)
+    ("info", "Available live source are: #{list}", 200)
+  else
+    ("error", "Unrecognized argument #{key}", 400)
+  end
+end
+
+# Define routes
+def routehandler(req, args) =
+  if req == "/set" then
+    if list.length(args) == 1 then
+      setarghandler(list.hd(default=("none",""), args))
+    else
+      ("error","Route #{req} only support 1 argument",400)
+    end
+  elsif req == "/get" then
+    getarghandler(list.hd(default=("none",""), args))
+  elsif req == "/list" then
+    listarghandler(list.hd(default=("none",""), args))
+  else
+    ("error","Route #{req} does not exist",404)
+  end
+end
+
+# Default httphandler
+def httphandler(~protocol,~data,~headers,uri) =
+  let (req, args) = url.split(uri)
+  let (level, msg, code) = routehandler(req, args)
+  http_response(level, msg, code)
+end
+
+harbor.http.register(port=8081,method="GET","^/",httphandler)
+
+### END HTTP API
+
+### Telnet API
 def setlivesource(s) =
-  if not list.mem(s,input_list) then
+  if not list.mem(s,live_input_list) then
     "error - Source does not exist! Doing nothing."
   else
     live_source := s
@@ -56,10 +161,6 @@ end
 
 def getlivesource(_) =
   !live_source
-end
-
-def is_playing(n) =
-  fun () -> n == !live_source
 end
 
 server.register(description="Get live source",
@@ -72,16 +173,11 @@ server.register(description="Set live source",
                 "setlivesource",
                 setlivesource)
 
-live = switch(id="switch_live", 
-              track_sensitive=false, 
-              [(is_playing("srt1"), srt1), 
-              (is_playing("srt2"), srt2)])
+### END Telnet API
 
-radio_prod = mksafe(fallback(id="fallback_prod",
-                             track_sensitive=false,
-                             [live, srt1, srt2]))
+### Outputs
 
-# Define output formats
+# Define outputs formats
 
 aac_lofi = %ffmpeg(format="mpegts",
                    codec="libfdk_aac",
@@ -106,6 +202,8 @@ aac_hifi = %ffmpeg(format="mpegts",
                    b="192k",
                    afterburner=1,
                    profile="aac_low")
+
+# Defines stream infos that cannot be guessed by liqudisoap
 
 streams_info = [("aac_lofi",(78000,"mp4a.40.2","ts")),
                 ("aac_midfi",(160000,"mp4a.40.2","ts")),
@@ -141,3 +239,4 @@ output.file.hls(id="output_hls",
                  ("aac_hifi", aac_hifi)],
                 radio_prod)
 
+### END Outputs

@@ -38,8 +38,22 @@ ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu reposit
 By default the encoder send blank HLS segments, that mean if it's started, you can already listen the blank stream.
 
 ```bash
-ffplay http://127.0.0.1:8080/live.m3u8
-vlc http://127.0.0.1:8080/live.m3u8
+ffplay http://localhost:8080/live.m3u8
+vlc http://localhost:8080/live.m3u8
+```
+
+### Switch live source
+
+The default script allow to switch the output between inputs.
+
+```bash
+# Check available input to switch to
+curl http://localhost:8080/api/list?livesource
+# Switch the livesource
+curl http://localhost:8080/api/set?livesource=srt2
+curl http://localhost:8080/api/set?livesource=srt1
+# check the current live source
+curl http://localhost:8080/api/get?livesource
 ```
 
 ### Sending audio to the streaming server
