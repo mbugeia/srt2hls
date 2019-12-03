@@ -27,7 +27,7 @@ sudo docker-compose up
 
 ### Local installation requirements
 
-[Liquidsoap](https://www.liquidsoap.info) 1.4.0+ (not released yet, use master)
+[Liquidsoap](https://www.liquidsoap.info) 1.5.0+ (not released yet, use master)
 
 ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu repository is fine)
 
@@ -66,6 +66,12 @@ Requirement : ffmpeg compiled with srt support (the one on liquidsoap debian/ubu
 ffmpeg -re -i $AUDIOFILE -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 # live stream
 ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
+```
+
+### Prometheus metrics
+
+```bash
+curl http://localhost:8080/metrics
 ```
 
 ## Development

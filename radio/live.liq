@@ -17,6 +17,10 @@ set("harbor.max_connections",10)
 set("harbor.timeout",10.)
 set("harbor.verbose",false)
 
+# Prometheus settings
+set("prometheus.server",true)
+set("prometheus.server.port",9090)
+
 # Audio settings
 
 set("frame.audio.samplerate",44100)
@@ -35,6 +39,14 @@ if !hlspath == "" then
   hlspath := "/hls"
 end
 
+### Prometheus metrics
+
+source_metric = prometheus.monitor(labels=["source"])
+
+is_ready_metric = prometheus.gauge(labels=["source"],help="is source ready?","liquidsoap_is_ready")
+
+### END Prometheus metrics
+
 ### Inputs
 
 srt1 = buffer(id="buffer_srt1",
@@ -42,12 +54,40 @@ srt1 = buffer(id="buffer_srt1",
               max=3.0,
               input.srt(id="input_srt1", 
                         port=10000))
+
+source_metric(label_values=["srt1"],srt1)
+
+set_is_ready = is_ready_metric(label_values=["srt1"])
+def check_if_ready() =
+  if source.is_ready(srt1) then
+    set_is_ready(1.)
+  else
+    set_is_ready(0.)
+  end
+  0.1
+end
+thread.run.recurrent(delay=0.,check_if_ready)
+
+
 srt2 = buffer(id="buffer_srt2",
               fallible=true, 
               max=3.0,
               input.srt(id="input_srt2", 
                         port=10001, 
                         clock_safe=false))
+
+source_metric(label_values=["srt2"],srt2)
+
+set_is_ready = is_ready_metric(label_values=["srt2"])
+def check_if_ready() =
+  if source.is_ready(srt2) then
+    set_is_ready(1.)
+  else
+    set_is_ready(0.)
+  end
+  0.1
+end
+thread.run.recurrent(delay=0.,check_if_ready)
 
 safe_blank = blank(id="safe_blank")
 
@@ -71,6 +111,8 @@ live = switch(id="switch_live",
 radio_prod = fallback(id="fallback_prod",
                              track_sensitive=false,
                              [live, srt1, srt2, safe_blank])
+
+source_metric(label_values=["radio_prod"],radio_prod)
 
 ### END Radio logic
 
