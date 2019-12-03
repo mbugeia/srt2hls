@@ -7,8 +7,8 @@ services:
       args:
         gitbranch: reporting-tools
         version: 1.5.0
-        buildnumber: 2426
-    image: privyplace/liquidsoap:reporting-tools-1.5.0-2426
+        buildnumber: 2444
+    image: privyplace/liquidsoap:reporting-tools-1.5.0-2444
     container_name: liquidsoap
     command: /radio/live.liq
     restart: unless-stopped

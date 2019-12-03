@@ -41,7 +41,7 @@ end
 
 ### Prometheus metrics
 
-source_metric = prometheus.monitor(labels=["source"])
+latency_metric = prometheus.latency(labels=["source"])
 
 is_ready_metric = prometheus.gauge(labels=["source"],help="is source ready?","liquidsoap_is_ready")
 
@@ -55,7 +55,7 @@ srt1 = buffer(id="buffer_srt1",
               input.srt(id="input_srt1", 
                         port=10000))
 
-source_metric(label_values=["srt1"],srt1)
+latency_metric(label_values=["srt1"],srt1)
 
 set_is_ready = is_ready_metric(label_values=["srt1"])
 def check_if_ready() =
@@ -76,7 +76,7 @@ srt2 = buffer(id="buffer_srt2",
                         port=10001, 
                         clock_safe=false))
 
-source_metric(label_values=["srt2"],srt2)
+latency_metric(label_values=["srt2"],srt2)
 
 set_is_ready = is_ready_metric(label_values=["srt2"])
 def check_if_ready() =
@@ -112,7 +112,7 @@ radio_prod = fallback(id="fallback_prod",
                              track_sensitive=false,
                              [live, srt1, srt2, safe_blank])
 
-source_metric(label_values=["radio_prod"],radio_prod)
+latency_metric(label_values=["radio_prod"],radio_prod)
 
 ### END Radio logic
 
