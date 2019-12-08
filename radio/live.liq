@@ -31,6 +31,10 @@ set("audio.converter.samplerate.libsamplerate.quality","fast")
 set("root.max_latency",5.)
 set("clock.allow_streaming_errors",false)
 
+# Internal scheduler settings
+set("scheduler.fast_queues",1)
+set("scheduler.generic_queues",4)
+
 # Retrieve configuration from environment
 
 hlspath = ref getenv("HLSPATH")
@@ -247,21 +251,42 @@ aac_hifi = %ffmpeg(format="mpegts",
 
 # Defines stream infos that cannot be guessed by liqudisoap
 
-streams_info = [("aac_lofi",(78000,"mp4a.40.2","ts")),
-                ("aac_midfi",(160000,"mp4a.40.2","ts")),
-                ("aac_hifi",(252000,"mp4a.40.2","ts"))]
+streams_info = [("aac-lofi",(78000,"mp4a.40.2","ts")),
+                ("aac-midfi",(160000,"mp4a.40.2","ts")),
+                ("aac-hifi",(252000,"mp4a.40.2","ts"))]
 
 # Output to HLS
 
 def segment_name(~position,~extname,stream_name) =
   timestamp = int_of_float(gettimeofday())
   duration = 2
-  "#{stream_name}_#{duration}_#{timestamp}_#{position}.ts"
+  "#{stream_name}-#{duration}-#{timestamp}-#{position}.ts"
 end
 
 def on_file_change(~state,fname) =
-  if state == "closed" and file.extension(fname) != '.m3u8' then
-    log.important(label="hls", "Segment #{fname} created")
+  def make_configmap(type) =
+    def create_configmap() =
+        system("kubectl create configmap liquidsoap-0-#{path.basename(fname)} --from-file=#{fname} --dry-run=true -o yaml | kubectl label -f- --dry-run -o yaml --local type=#{type} | kubectl apply -f -")
+      (-1.)
+    end
+    create_configmap
+  end
+  def make_delete_configmap() =
+    def delete_configmap() =
+        system("kubectl delete configmap liquidsoap-0-#{path.basename(fname)}")
+      (-1.)
+    end
+    delete_configmap
+  end
+  if state == "closed" then
+    if file.extension(fname) != '.m3u8' then
+      log.important(label="hls", "Segment #{fname} created")
+      thread.run.recurrent(delay=0.,fast=false,make_configmap("segment"))
+    else 
+      thread.run.recurrent(delay=0.,fast=false,make_configmap("playlist"))
+    end
+  elsif state == "deleted" then
+    thread.run.recurrent(delay=0.,fast=false,make_delete_configmap())
   end
 end
 
@@ -273,12 +298,10 @@ output.file.hls(id="output_hls",
                 segment_name=segment_name,
                 streams_info=streams_info,
                 on_file_change=on_file_change,
-                persist=true,
-                persist_at="state.config",
                 !hlspath,
-                [("aac_lofi",aac_lofi), 
-                 ("aac_midfi", aac_midfi), 
-                 ("aac_hifi", aac_hifi)],
+                [("aac-lofi",aac_lofi), 
+                 ("aac-midfi", aac_midfi), 
+                 ("aac-hifi", aac_hifi)],
                 radio_prod)
 
 ### END Outputs
