@@ -39,57 +39,80 @@ if !hlspath == "" then
   hlspath := "/hls"
 end
 
-### Prometheus metrics
+### Define Prometheus metrics
 
-latency_metric = prometheus.latency(labels=["source"])
+latency_metric = prometheus.latency(labels=["radio","type","name"])
+is_ready_metric = prometheus.gauge(labels=["radio","type","name"],help="is source ready?","liquidsoap_is_ready")
+is_playing_metric = prometheus.gauge(labels=["radio","type","name"],help="is source playing?","liquidsoap_is_playing")
+duration_unready_seconds_metric = prometheus.counter(labels=["radio","type","name"],help="Cumulative duration in seconds of the source in unreadystate","liquidsoap_duration_unready_seconds")
 
-is_ready_metric = prometheus.gauge(labels=["source"],help="is source ready?","liquidsoap_is_ready")
+# Prometheus metrics helpers
+def check_if_ready(set_is_ready, increase_duration_unready_seconds, source) =
+  def callback() =
+    if source.is_ready(source) then
+      set_is_ready(1.)
+    else
+      set_is_ready(0.)
+      increase_duration_unready_seconds(0.1)
+    end
+    0.1
+  end
+  callback
+end
 
-### END Prometheus metrics
+def source_tag(s,tag) =
+  def f(_)
+    [("source_tag",tag)]
+  end
+  map_metadata(insert_missing=true,f,s)
+end
+
+### END Define Prometheus metrics
 
 ### Inputs
 
+srt1 = input.srt(id="input_srt1", 
+                 port=10000)
+
+# Get metrics
+latency_metric(label_values=["default","input","srt1"],srt1)
+set_is_ready = is_ready_metric(label_values=["default","input","srt1"])
+increase_duration_unready_seconds = duration_unready_seconds_metric(label_values=["default","input","srt1"])
+thread.run.recurrent(delay=0.,check_if_ready(set_is_ready, increase_duration_unready_seconds, srt1))
+set_is_playing_srt1 = is_playing_metric(label_values=["default","input","srt1"])
+
+# Wrap input in a buffer
 srt1 = buffer(id="buffer_srt1",
               fallible=true, 
               max=3.0,
-              input.srt(id="input_srt1", 
-                        port=10000))
+              srt1)
 
-latency_metric(label_values=["srt1"],srt1)
+# Tag source with it's name in metadata
+srt1 = source_tag(srt1, "srt1")
 
-set_is_ready = is_ready_metric(label_values=["srt1"])
-def check_if_ready() =
-  if source.is_ready(srt1) then
-    set_is_ready(1.)
-  else
-    set_is_ready(0.)
-  end
-  0.1
-end
-thread.run.recurrent(delay=0.,check_if_ready)
+srt2 = input.srt(id="input_srt2", 
+                     port=10001)
 
+# Get metrics
+latency_metric(label_values=["default","input","srt2"],srt2)
+set_is_ready = is_ready_metric(label_values=["default","input","srt2"])
+increase_duration_unready_seconds = duration_unready_seconds_metric(label_values=["default","input","srt2"])
+thread.run.recurrent(delay=0.,check_if_ready(set_is_ready, increase_duration_unready_seconds, srt2))
+set_is_playing_srt2 = is_playing_metric(label_values=["default","input","srt2"])
 
+# Wrap input in a buffer
 srt2 = buffer(id="buffer_srt2",
               fallible=true, 
               max=3.0,
-              input.srt(id="input_srt2", 
-                        port=10001, 
-                        clock_safe=false))
+              srt2)
 
-latency_metric(label_values=["srt2"],srt2)
+# Tag source with it's name in metadata
+srt2 = source_tag(srt2, "srt2")
 
-set_is_ready = is_ready_metric(label_values=["srt2"])
-def check_if_ready() =
-  if source.is_ready(srt2) then
-    set_is_ready(1.)
-  else
-    set_is_ready(0.)
-  end
-  0.1
-end
-thread.run.recurrent(delay=0.,check_if_ready)
-
+# define safe blank source
 safe_blank = blank(id="safe_blank")
+safe_blank = source_tag(safe_blank, "safe_blank")
+set_is_playing_safe_blank = is_playing_metric(label_values=["default","input","safe_blank"])
 
 live_input_list = ["srt1", "srt2"]
 
@@ -112,7 +135,34 @@ radio_prod = fallback(id="fallback_prod",
                              track_sensitive=false,
                              [live, srt1, srt2, safe_blank])
 
-latency_metric(label_values=["radio_prod"],radio_prod)
+# Get metrics on output
+latency_metric(label_values=["default","output","radio_prod"],radio_prod)
+set_is_ready = is_ready_metric(label_values=["default","output","radio_prod"])
+increase_duration_unready_seconds = duration_unready_seconds_metric(label_values=["default","output","radio_prod"])
+thread.run.recurrent(delay=0.,check_if_ready(set_is_ready, increase_duration_unready_seconds, radio_prod))
+
+def check_is_playing(metadata) =
+  source_tag = list.assoc(default="", "source_tag", metadata)
+
+  if source_tag == "srt1" then
+    set_is_playing_srt1(1.)
+  else
+    set_is_playing_srt1(0.)
+  end
+  if source_tag == "srt2" then
+    set_is_playing_srt2(1.)
+  else
+    set_is_playing_srt2(0.)
+  end
+  if source_tag == "safe_blank" then
+    set_is_playing_safe_blank(1.)
+  else
+    set_is_playing_safe_blank(0.)
+  end
+end
+
+# Check output metadata to set is_playing metric
+radio_prod = on_metadata(check_is_playing, radio_prod)
 
 ### END Radio logic
 
