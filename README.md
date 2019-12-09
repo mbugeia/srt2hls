@@ -27,7 +27,7 @@ sudo docker-compose up
 
 ### Local installation requirements
 
-[Liquidsoap](https://www.liquidsoap.info) 1.4.0+ (not released yet, use master)
+[Liquidsoap](https://www.liquidsoap.info) 1.5.0+ (not released yet, use master)
 
 ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu repository is fine)
 
@@ -68,9 +68,20 @@ ffmpeg -re -i $AUDIOFILE -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ```
 
+### Monitoring
+
+#### Grafana
+http://localhost:3000/
+#### Prometheus
+http://localhost:9090/
+
 ## Development
 
 ### Build images
 ```bash
 sudo docker-compose build
 ```
+
+## Thanks
+
+Monitoring stack is mostly inspired by https://github.com/stefanprodan/dockprom
