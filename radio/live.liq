@@ -121,10 +121,10 @@ live_input_list = ["srt1", "srt2"]
 
 ### Radio logic
 
-live_source = ref "srt1"
+preferred_live_source = ref "srt1"
 
 def is_playing(n) =
-  fun () -> n == !live_source
+  fun () -> n == !preferred_live_source
 end
 
 live = switch(id="switch_live", 
@@ -204,8 +204,8 @@ end
 def getarghandler(arg) =
   let (key, _) = arg
   if key == "livesource" then
-    value = !live_source
-    ("info", "Live source is set to #{value}", 200)
+    value = !preferred_live_source
+    ("info", "Preferred live source is set to #{value}", 200)
   else
     ("error", "Unrecognized argument #{key}", 400)
   end
@@ -218,8 +218,8 @@ def setarghandler(arg) =
     if not list.mem(value,live_input_list) then
       ("error", "Source #{value} does not exist", 400)
     else
-      live_source := value
-      ("info", "Live source set to #{value}", 200)
+      preferred_live_source := value
+      ("info", "Preferred Live source set to #{value}", 200)
     end
   else
     ("error", "Unrecognized argument #{key}", 400)
@@ -270,13 +270,13 @@ def setlivesource(s) =
   if not list.mem(s,live_input_list) then
     "error - Source does not exist! Doing nothing."
   else
-    live_source := s
-    "Live source set to #{s}"
+    preferred_live_source := s
+    "Preferred Live source set to #{s}"
   end
 end
 
 def getlivesource(_) =
-  !live_source
+  !preferred_live_source
 end
 
 server.register(description="Get live source",
