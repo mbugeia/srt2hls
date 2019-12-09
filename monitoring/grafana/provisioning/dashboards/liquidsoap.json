@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 5,
-  "iteration": 1575897465232,
+  "iteration": 1575897465236,
   "links": [],
   "panels": [
     {
@@ -31,6 +31,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "Is source $name ready to play",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -134,6 +135,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "Is source $name ready to play",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -180,7 +182,7 @@
       ],
       "repeat": null,
       "repeatDirection": "h",
-      "repeatIteration": 1575897465232,
+      "repeatIteration": 1575897465236,
       "repeatPanelId": 6,
       "scopedVars": {
         "name": {
@@ -239,6 +241,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "Is source $name ready to play",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -285,7 +288,7 @@
       ],
       "repeat": null,
       "repeatDirection": "h",
-      "repeatIteration": 1575897465232,
+      "repeatIteration": 1575897465236,
       "repeatPanelId": 6,
       "scopedVars": {
         "name": {
@@ -344,6 +347,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "The real live source playing",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -408,7 +412,6 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Now playing",
-      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [],
@@ -426,6 +429,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "The preferred live source to play",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -489,8 +493,7 @@
       "thresholds": "",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Preferred livesource",
-      "transparent": true,
+      "title": "Preferred Live Source",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [],
@@ -508,6 +511,7 @@
       ],
       "datasource": null,
       "decimals": null,
+      "description": "Is the output brodcasting blank audio",
       "format": "none",
       "gauge": {
         "maxValue": 100,
