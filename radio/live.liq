@@ -44,6 +44,7 @@ end
 latency_metric = prometheus.latency(labels=["radio","type","name"])
 is_ready_metric = prometheus.gauge(labels=["radio","type","name"],help="is source ready?","liquidsoap_is_ready")
 is_playing_metric = prometheus.gauge(labels=["radio","type","name"],help="is source playing?","liquidsoap_is_playing")
+is_preferred_livesource_metric = prometheus.gauge(labels=["radio","type","name"],help="is source is the preferred livesource?","liquidsoap_is_preferred_livesource")
 duration_unready_seconds_metric = prometheus.counter(labels=["radio","type","name"],help="Cumulative duration in seconds of the source in unreadystate","liquidsoap_duration_unready_seconds")
 is_blank_metric = prometheus.gauge(labels=["radio","type","name"],help="is source blank?","liquidsoap_is_blank")
 
@@ -72,6 +73,20 @@ end
 
 ### Inputs
 
+preferred_live_source = ref "srt1"
+
+def check_if_preferred_livesource(set_is_preferred_livesource, source) =
+  def callback() =
+    if !preferred_live_source == source then
+      set_is_preferred_livesource(1.)
+    else
+      set_is_preferred_livesource(0.)
+    end
+    0.1
+  end
+  callback
+end
+
 srt1 = input.srt(id="input_srt1", 
                  port=10000)
 
@@ -81,6 +96,8 @@ set_is_ready = is_ready_metric(label_values=["default","input","srt1"])
 increase_duration_unready_seconds = duration_unready_seconds_metric(label_values=["default","input","srt1"])
 thread.run.recurrent(delay=0.,check_if_ready(set_is_ready, increase_duration_unready_seconds, srt1))
 set_is_playing_srt1 = is_playing_metric(label_values=["default","input","srt1"])
+set_is_preferred_livesource = is_preferred_livesource_metric(label_values=["default","input","srt1"])
+thread.run.recurrent(delay=0.,check_if_preferred_livesource(set_is_preferred_livesource,"srt1"))
 
 # Wrap input in a buffer
 srt1 = buffer(id="buffer_srt1",
@@ -100,6 +117,8 @@ set_is_ready = is_ready_metric(label_values=["default","input","srt2"])
 increase_duration_unready_seconds = duration_unready_seconds_metric(label_values=["default","input","srt2"])
 thread.run.recurrent(delay=0.,check_if_ready(set_is_ready, increase_duration_unready_seconds, srt2))
 set_is_playing_srt2 = is_playing_metric(label_values=["default","input","srt2"])
+set_is_preferred_livesource = is_preferred_livesource_metric(label_values=["default","input","srt2"])
+thread.run.recurrent(delay=0.,check_if_preferred_livesource(set_is_preferred_livesource,"srt2"))
 
 # Wrap input in a buffer
 srt2 = buffer(id="buffer_srt2",
@@ -120,8 +139,6 @@ live_input_list = ["srt1", "srt2"]
 ### END Inputs
 
 ### Radio logic
-
-preferred_live_source = ref "srt1"
 
 def is_playing(n) =
   fun () -> n == !preferred_live_source
