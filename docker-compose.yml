@@ -105,6 +105,8 @@ services:
     - 8080
     networks:
     - default
+    labels:
+      org.label-schema.group: "monitoring"
   nodeexporter:
     image: prom/node-exporter:v0.18.1
     container_name: nodeexporter
