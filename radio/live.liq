@@ -45,6 +45,7 @@ latency_metric = prometheus.latency(labels=["radio","type","name"])
 is_ready_metric = prometheus.gauge(labels=["radio","type","name"],help="is source ready?","liquidsoap_is_ready")
 is_playing_metric = prometheus.gauge(labels=["radio","type","name"],help="is source playing?","liquidsoap_is_playing")
 duration_unready_seconds_metric = prometheus.counter(labels=["radio","type","name"],help="Cumulative duration in seconds of the source in unreadystate","liquidsoap_duration_unready_seconds")
+is_blank_metric = prometheus.gauge(labels=["radio","type","name"],help="is source blank?","liquidsoap_is_blank")
 
 # Prometheus metrics helpers
 def check_if_ready(set_is_ready, increase_duration_unready_seconds, source) =
@@ -163,6 +164,29 @@ end
 
 # Check output metadata to set is_playing metric
 radio_prod = on_metadata(check_is_playing, radio_prod)
+
+# Detect blank before output
+
+set_is_blank = is_blank_metric(label_values=["default","output","radio_prod"])
+
+def noise_detect_handler() =
+  set_is_blank(0.0)
+end
+
+def blank_detect_handler() =
+  set_is_blank(1.0)
+end
+
+radio_prod = on_blank(id="on_blank_radio_prod",
+                      max_blank=1.0,
+                      min_noise=0.0,
+                      on_noise=noise_detect_handler,
+                      start_blank=true,
+                      threshold=-40.0,
+                      track_sensitive=true,
+                      blank_detect_handler,
+                      radio_prod)
+
 
 ### END Radio logic
 
