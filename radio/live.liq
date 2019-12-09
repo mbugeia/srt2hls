@@ -265,32 +265,6 @@ harbor.http.register(port=8081,method="GET","^/",httphandler)
 
 ### END HTTP API
 
-### Telnet API
-def setlivesource(s) =
-  if not list.mem(s,live_input_list) then
-    "error - Source does not exist! Doing nothing."
-  else
-    preferred_live_source := s
-    "Preferred Live source set to #{s}"
-  end
-end
-
-def getlivesource(_) =
-  !preferred_live_source
-end
-
-server.register(description="Get live source",
-                usage= "getlivesource",
-                "getlivesource",
-                getlivesource)
-
-server.register(description="Set live source",
-                usage= "setlivesource <livesource>",
-                "setlivesource",
-                setlivesource)
-
-### END Telnet API
-
 ### Outputs
 
 # Define outputs formats

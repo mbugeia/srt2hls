@@ -24,12 +24,9 @@ def send_tn_command(port, command, parameters=""):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("port", help="telnet port")
-    parser.add_argument("command", help="getlivesource, setlivesource <source>")
-    parser.add_argument("parameters", nargs='?', default="", help="action parameters")
+    parser.add_argument("command", help="<command>")
+    parser.add_argument("parameter", nargs='?', default="", help="command parameter")
 
     args = parser.parse_args()
 
-    if args.command == "setlivesource" and args.parameters == "":
-        sys.exit("Error: you need to provide a livesource to switch to")
-    else:
-        print(send_tn_command(args.port, args.command, args.parameters))
+    print(send_tn_command(args.port, args.command, args.parameter))
