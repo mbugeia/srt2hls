@@ -72,6 +72,8 @@ ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 
 #### Grafana
 http://localhost:3000/
+
+![Alt text](img/monitoring.png?raw=true "Liquidsoap Dashboard in Grafana")
 #### Prometheus
 http://localhost:9090/
 
@@ -83,5 +85,7 @@ sudo docker-compose build
 ```
 
 ## Thanks
+
+Folks of [Liquidsoap](https://www.liquidsoap.info)
 
 Monitoring stack is mostly inspired by https://github.com/stefanprodan/dockprom
