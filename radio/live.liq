@@ -286,29 +286,44 @@ harbor.http.register(port=8081,method="GET","^/",httphandler)
 
 # Define outputs formats
 
-aac_lofi = %ffmpeg(format="mpegts",
-                   codec="libfdk_aac",
-                   channels=2,
-                   ar=44100,
-                   b="32k",
-                   afterburner=1,
-                   profile="aac_low")
+aac_lofi = 
+  %ffmpeg(
+    format="mpegts",
+    audio_codec="libfdk_aac",
+    channels=2,
+    samplerate=44100,
+    %audio(
+      b="32k",
+      afterburner=1,
+      profile="aac_low"
+    )
+  )
 
-aac_midfi = %ffmpeg(format="mpegts",
-                   codec="libfdk_aac",
-                   channels=2,
-                   ar=44100,
-                   b="96k",
-                   afterburner=1,
-                   profile="aac_low")
+aac_midfi = 
+  %ffmpeg(
+    format="mpegts",
+    audio_codec="libfdk_aac",
+    channels=2,
+    samplerate=44100,
+    %audio(
+      b="96k",
+      afterburner=1,
+      profile="aac_low"
+    )
+  )
 
-aac_hifi = %ffmpeg(format="mpegts",
-                   codec="libfdk_aac",
-                   channels=2,
-                   ar=44100,
-                   b="192k",
-                   afterburner=1,
-                   profile="aac_low")
+aac_hifi = 
+  %ffmpeg(
+    format="mpegts",
+    audio_codec="libfdk_aac",
+    channels=2,
+    samplerate=44100,
+    %audio(
+      b="192k",
+      afterburner=1,
+      profile="aac_low"
+    )
+  )
 
 # Defines stream infos that cannot be guessed by liqudisoap
 
