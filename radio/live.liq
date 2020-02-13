@@ -27,6 +27,11 @@ set("frame.audio.samplerate",44100)
 set("frame.audio.channels",2)
 set("audio.converter.samplerate.libsamplerate.quality","fast")
 
+# Video settings
+set("frame.video.height",1080)
+set("frame.video.samplerate",25)
+set("frame.video.width",1920)
+
 # Clocks settings
 set("root.max_latency",5.)
 set("clock.allow_streaming_errors",false)
@@ -149,9 +154,13 @@ live = switch(id="switch_live",
               [(is_playing("srt1"), srt1), 
               (is_playing("srt2"), srt2)])
 
+radio_preprod = fallback(id="fallback_preprod",
+                             track_sensitive=false,
+                             [live, srt1, srt2])
+
 radio_prod = fallback(id="fallback_prod",
                              track_sensitive=false,
-                             [live, srt1, srt2, safe_blank])
+                             [radio_preprod, safe_blank])
 
 # Get metrics on output
 latency_metric(label_values=["default","output","radio_prod"],radio_prod)
@@ -206,6 +215,48 @@ radio_prod = on_blank(id="on_blank_radio_prod",
 
 
 ### END Radio logic
+
+### Video logic
+def make_video(s) =
+  def mkfilter(graph) =
+    s = ffmpeg.filter.audio.input(graph, s)
+    s = ffmpeg.filter.showspectrum(
+          graph,
+          s,
+          string_args=[
+            ("size", "1920x1080"),
+            ("mode", "separate"),
+            ("slide", "scroll"),
+            ("scale", "cbrt"),
+            ("color", "intensity")
+          ],
+          float_args=[
+            ("saturation", 0.2)
+          ]
+        )
+    ffmpeg.filter.video.output(graph, s)
+  end
+  ffmpeg.filter.create(mkfilter)
+end
+
+video_main = make_video(radio_preprod)
+
+video_fallback = mksafe(drop_audio(video.external.testsrc()))
+
+video_fallback = video.add_text.native("No audio", video_fallback)
+
+video_prod = 
+  fallback(
+    id="fallback_video_prod",
+    track_sensitive=false,
+    [
+      video_main,
+      video_fallback,
+      blank()
+    ]
+  )
+
+### END Video logic
 
 ### HTTP API
 
@@ -284,7 +335,7 @@ harbor.http.register(port=8081,method="GET","^/",httphandler)
 
 ### Outputs
 
-# Define outputs formats
+# Define audio outputs formats
 
 aac_lofi = 
   %ffmpeg(
@@ -325,13 +376,33 @@ aac_hifi =
     )
   )
 
-# Defines stream infos that cannot be guessed by liqudisoap
+# Define video outputs formats
+
+video_format = 
+  %ffmpeg(
+    format="mpegts",
+    audio_codec="libfdk_aac",
+    video_codec="libx264",
+    channels=2,
+    samplerate=44100,
+    %audio(
+      b="192k",
+      afterburner=1,
+      profile="aac_low"
+    ),
+    %video(
+      b="2600k",
+      preset="ultrafast"
+    ),
+  )
+
+# Output audio to HLS
+
+# Defines stream infos that cannot be guessed by liquidsoap
 
 streams_info = [("aac_lofi",(78000,"mp4a.40.2","ts")),
                 ("aac_midfi",(160000,"mp4a.40.2","ts")),
                 ("aac_hifi",(252000,"mp4a.40.2","ts"))]
-
-# Output to HLS
 
 def segment_name(~position,~extname,stream_name) =
   timestamp = int_of_float(gettimeofday())
@@ -360,5 +431,41 @@ output.file.hls(id="output_hls",
                  ("aac_midfi", aac_midfi), 
                  ("aac_hifi", aac_hifi)],
                 radio_prod)
+
+# Output video to HLS
+
+streams_info = [("video_format",(1000000,"mp4a.40.2","ts"))]
+
+def segment_name(~position,~extname,stream_name) =
+  timestamp = int_of_float(gettimeofday())
+  duration = 2
+  "#{stream_name}_#{duration}_#{timestamp}_#{position}.ts"
+end
+
+def on_file_change(~state,fname) =
+  if state == "closed" and file.extension(fname) != '.m3u8' then
+    log.important(label="hls", "Segment #{fname} created")
+  end
+end
+
+output.file.hls(
+  id="output_hls",
+  playlist="monitor.m3u8",
+  segment_duration=2.0,
+  segments=3,
+  segments_overhead=10,
+  segment_name=segment_name,
+  streams_info=streams_info,
+  on_file_change=on_file_change,
+  persist=true,
+  persist_at="state.config",
+  !hlspath,
+  [
+    ("video_format", video_format)
+  ],
+  mux_audio(
+    audio=radio_prod,
+    video_prod
+  ))
 
 ### END Outputs
