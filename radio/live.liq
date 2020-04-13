@@ -289,10 +289,10 @@ harbor.http.register(port=8081,method="GET","^/",httphandler)
 aac_lofi = 
   %ffmpeg(
     format="mpegts",
-    audio_codec="libfdk_aac",
-    channels=2,
-    samplerate=44100,
     %audio(
+      channels=2,
+      samplerate=44100,
+      codec="libfdk_aac",
       b="32k",
       afterburner=1,
       profile="aac_low"
@@ -302,10 +302,10 @@ aac_lofi =
 aac_midfi = 
   %ffmpeg(
     format="mpegts",
-    audio_codec="libfdk_aac",
-    channels=2,
-    samplerate=44100,
     %audio(
+      channels=2,
+      samplerate=44100,
+      codec="libfdk_aac",
       b="96k",
       afterburner=1,
       profile="aac_low"
@@ -315,11 +315,11 @@ aac_midfi =
 aac_hifi = 
   %ffmpeg(
     format="mpegts",
-    audio_codec="libfdk_aac",
-    channels=2,
-    samplerate=44100,
     %audio(
-      b="192k",
+      channels=2,
+      samplerate=44100,
+      codec="libfdk_aac",
+      b="196k",
       afterburner=1,
       profile="aac_low"
     )
