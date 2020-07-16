@@ -6,11 +6,17 @@ ARG buildnumber
 
 COPY liquidsoap.key /tmp/liquidsoap.key
 
-RUN echo " \
-deb http://deb.debian.org/debian buster main contrib non-free\n \
-deb http://security.debian.org/debian-security buster/updates main contrib non-free\n \
-deb http://deb.debian.org/debian buster-updates main contrib non-free\n \
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN echo "\
+deb http://deb.debian.org/debian buster main contrib non-free\n\
+deb http://security.debian.org/debian-security buster/updates main contrib non-free\n\
+deb http://deb.debian.org/debian buster-updates main contrib non-free\n\
 " > /etc/apt/sources.list \
+    && echo "\
+Package: *\n\
+Pin: origin deb.liquidsoap.info\n\
+Pin-Priority: 900" > /etc/apt/preferences.d/liquidsoap \
     && apt-get update \
     && apt-get install -y \
        gnupg2 \
