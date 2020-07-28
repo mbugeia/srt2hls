@@ -70,6 +70,9 @@ ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 
 ### Monitoring
 
+#### Video monitoring
+ffplay http://localhost:8080/monitor.m3u8
+
 #### Grafana
 http://localhost:3000/
 
