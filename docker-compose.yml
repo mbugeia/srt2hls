@@ -41,7 +41,7 @@ services:
      - ./hls:/hls
      - ./nginxhls/stream.conf:/etc/nginx/conf.d/stream.conf
   prometheus:
-    image: prom/prometheus:v2.15.2
+    image: prom/prometheus:v2.19.3
     container_name: prometheus
     volumes:
     - ./monitoring/prometheus:/etc/prometheus
@@ -53,6 +53,7 @@ services:
     - '--web.console.templates=/etc/prometheus/consoles'
     - '--storage.tsdb.retention.time=200h'
     - '--web.enable-lifecycle'
+    - '--log.level=warn'
     restart: unless-stopped
     ports:
     - 9090:9090/tcp
@@ -61,13 +62,14 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   alertmanager:
-    image: prom/alertmanager:v0.20.0
+    image: prom/alertmanager:v0.21.0
     container_name: alertmanager
     volumes:
     - ./monitoring/alertmanager:/etc/alertmanager
     command:
     - '--config.file=/etc/alertmanager/config.yml'
     - '--storage.path=/alertmanager'
+    - '--log.level=warn'
     restart: unless-stopped
     expose:
     - 9093
@@ -76,7 +78,7 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   grafana:
-    image: grafana/grafana:6.6.1
+    image: grafana/grafana:7.1.1
     container_name: grafana
     volumes:
     - grafana_data:/var/lib/grafana
@@ -93,7 +95,7 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   cadvisor:
-    image: gcr.io/google-containers/cadvisor:v0.35.0
+    image: gcr.io/google-containers/cadvisor:v0.36.0
     container_name: cadvisor
     volumes:
     - /:/rootfs:ro
@@ -109,7 +111,7 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   nodeexporter:
-    image: prom/node-exporter:v0.18.1
+    image: prom/node-exporter:v1.0.1
     container_name: nodeexporter
     volumes:
     - /proc:/host/proc:ro
@@ -120,6 +122,8 @@ services:
     - '--path.rootfs=/rootfs'
     - '--path.sysfs=/host/sys'
     - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    - '--no-collector.powersupplyclass'
+    - '--log.level=warn'
     restart: unless-stopped
     expose:
     - 9100
@@ -131,6 +135,6 @@ services:
 volumes:
   prometheus_data: {}
   grafana_data: {}
-     
+
 networks:
   default:
