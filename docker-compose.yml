@@ -4,16 +4,12 @@ services:
   liquidsoap:
     build:
       context: liquidsoap
-      args:
-        gitbranch: master
-        version: 1.5.0
-        buildnumber: 2857
-    image: privyplace/liquidsoap:master-1.5.0-2857
+    image: privyplace/liquidsoap:master
     container_name: liquidsoap
     command: /radio/live.liq
     restart: unless-stopped
     networks:
-      - default
+    - default
     expose:
     - "8500"
     - "8081"
@@ -41,10 +37,10 @@ services:
      - ./hls:/hls
      - ./nginxhls/stream.conf:/etc/nginx/conf.d/stream.conf
   prometheus:
-    image: prom/prometheus:v2.19.3
+    image: prom/prometheus:v2.23.0
     container_name: prometheus
     volumes:
-    - ./monitoring/prometheus:/etc/prometheus
+    - ./monitoring/prometheus/:/etc/prometheus/
     - prometheus_data:/prometheus
     command:
     - '--config.file=/etc/prometheus/prometheus.yml'
@@ -78,7 +74,7 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   grafana:
-    image: grafana/grafana:7.1.1
+    image: grafana/grafana:7.3.5
     container_name: grafana
     volumes:
     - grafana_data:/var/lib/grafana
@@ -87,6 +83,7 @@ services:
     - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
     - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
     - GF_USERS_ALLOW_SIGN_UP=false
+    - GF_LOG_LEVEL=warn
     restart: unless-stopped
     ports:
     - 3000:3000/tcp
@@ -95,8 +92,9 @@ services:
     labels:
       org.label-schema.group: "monitoring"
   cadvisor:
-    image: gcr.io/google-containers/cadvisor:v0.36.0
+    image: gcr.io/cadvisor/cadvisor:v0.37.0
     container_name: cadvisor
+    privileged: true
     volumes:
     - /:/rootfs:ro
     - /var/run:/var/run:rw
