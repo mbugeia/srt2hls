@@ -19,8 +19,8 @@ services:
     - 10001:10001/udp
     - 8500:8500/tcp
     volumes:
-     - ./radio:/radio
-     - ./hls:/hls
+    - ./radio:/radio
+    - ./hls:/hls
   nginx:
     build:
       context: nginxhls
@@ -28,14 +28,14 @@ services:
     container_name: nginx
     restart: unless-stopped
     networks:
-     - default
+    - default
     expose:
     - "80"
     ports:
-     - 8080:80/tcp
+    - 8080:80/tcp
     volumes:
-     - ./hls:/hls
-     - ./nginxhls/stream.conf:/etc/nginx/conf.d/stream.conf
+    - ./hls:/hls
+    - ./nginxhls/stream.conf:/etc/nginx/conf.d/stream.conf
   prometheus:
     image: prom/prometheus:v2.23.0
     container_name: prometheus
