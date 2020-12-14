@@ -11,9 +11,10 @@ The goal of this program is to receive an audio stream with [SRT](https://github
 srt2hls use [Liquidsoap](https://www.liquidsoap.info) to receive a stream and encode it in HLS, then it use [nginx] (https://www.nginx.com/) to serve HLS content.
 
 The Liquidsoap container, by default, run radio/live.liq script. It's a fully functionnal example that will :
-1. Receive an SRT input on port 10000
-2. Encode it in aac with 3 quality
-3. Segment it in HLS format in /hls directory
+1. Receive 2 SRT inputs on ports 10000 and 10001
+2. Create a production stream with basic logic between the 2 inputs
+3. Encode the stream in aac with 3 quality
+4. Segment it in HLS format in /hls directory
 
 The Nginx container come with a specific configuration to serve HLS content with proper Content-Type, CORS and Cache-Control headers. It need read only access to /hls directory to serve HLS segments and playlists.
 
@@ -27,10 +28,8 @@ sudo docker-compose up
 
 ### Local installation requirements
 
-[Liquidsoap](https://www.liquidsoap.info) 1.5.0+ (not released yet, use master)
-
-ffmpeg compiled with fdkaac support (the one on liquidsoap debian/ubuntu repository is fine)
-
+- [Liquidsoap](https://www.liquidsoap.info) 2.0.0+ (not released yet, use master)
+- ffmpeg
 
 ## Basic usage
 
@@ -59,7 +58,7 @@ curl http://localhost:8080/api/get?livesource
 ### Sending audio to the streaming server
 
 #### Using ffmpeg
-Requirement : ffmpeg compiled with srt support (the one on liquidsoap debian/ubuntu repository is fine)
+Requirement : ffmpeg compiled with srt support (https://johnvansickle.com/ffmpeg/ for example)
 
 ```bash
 # static file

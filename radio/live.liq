@@ -33,7 +33,7 @@ set("clock.allow_streaming_errors",false)
 
 # Retrieve configuration from environment
 
-hlspath = ref getenv("HLSPATH")
+hlspath = ref(getenv("HLSPATH"))
 
 if !hlspath == "" then
   hlspath := "/hls"
@@ -49,9 +49,9 @@ duration_unready_seconds_metric = prometheus.counter(labels=["radio","type","nam
 is_blank_metric = prometheus.gauge(labels=["radio","type","name"],help="is source blank?","liquidsoap_is_blank")
 
 # Prometheus metrics helpers
-def check_if_ready(set_is_ready, increase_duration_unready_seconds, source) =
+def check_if_ready(set_is_ready, increase_duration_unready_seconds, s) =
   def callback() =
-    if source.is_ready(source) then
+    if s.is_ready() then
       set_is_ready(1.)
     else
       set_is_ready(0.)
@@ -73,7 +73,7 @@ end
 
 ### Inputs
 
-preferred_live_source = ref "srt1"
+preferred_live_source = ref("srt1")
 
 def check_if_preferred_livesource(set_is_preferred_livesource, source) =
   def callback() =
@@ -87,7 +87,7 @@ def check_if_preferred_livesource(set_is_preferred_livesource, source) =
   callback
 end
 
-srt1 = input.srt(id="input_srt1", 
+srt1 = input.srt(id="input_srt1",
                  port=10000)
 
 # Get metrics
@@ -101,14 +101,14 @@ thread.run.recurrent(delay=0.,check_if_preferred_livesource(set_is_preferred_liv
 
 # Wrap input in a buffer
 srt1 = buffer(id="buffer_srt1",
-              fallible=true, 
+              fallible=true,
               max=3.0,
               srt1)
 
 # Tag source with it's name in metadata
 srt1 = source_tag(srt1, "srt1")
 
-srt2 = input.srt(id="input_srt2", 
+srt2 = input.srt(id="input_srt2",
                      port=10001)
 
 # Get metrics
@@ -122,7 +122,7 @@ thread.run.recurrent(delay=0.,check_if_preferred_livesource(set_is_preferred_liv
 
 # Wrap input in a buffer
 srt2 = buffer(id="buffer_srt2",
-              fallible=true, 
+              fallible=true,
               max=3.0,
               srt2)
 
@@ -144,9 +144,9 @@ def is_playing(n) =
   fun () -> n == !preferred_live_source
 end
 
-live = switch(id="switch_live", 
-              track_sensitive=false, 
-              [(is_playing("srt1"), srt1), 
+live = switch(id="switch_live",
+              track_sensitive=false,
+              [(is_playing("srt1"), srt1),
               (is_playing("srt2"), srt2)])
 
 radio_prod = fallback(id="fallback_prod",
@@ -194,7 +194,7 @@ def blank_detect_handler() =
   set_is_blank(1.0)
 end
 
-radio_prod = on_blank(id="on_blank_radio_prod",
+radio_prod = blank.detect(id="on_blank_radio_prod",
                       max_blank=1.0,
                       min_noise=0.0,
                       on_noise=noise_detect_handler,
@@ -212,7 +212,7 @@ radio_prod = on_blank(id="on_blank_radio_prod",
 # Define default http response
 def http_response(level="error",msg="Unknow error",code=500) =
     log.important(label="httplog", "#{level} #{msg} #{code}")
-    http_response(code=code,
+    http.response(code=code,
                   headers=[("Content-Type","application/json")],
                   data='{"level": #{json_of(level)}, "msg": #{json_of(msg)},"code": #{json_of(code)}}')
 end
@@ -286,55 +286,46 @@ harbor.http.register(port=8081,method="GET","^/",httphandler)
 
 # Define outputs formats
 
-aac_lofi = 
+aac_lofi =
   %ffmpeg(
     format="mpegts",
     %audio(
       channels=2,
       samplerate=44100,
-      codec="libfdk_aac",
+      codec="aac",
       b="32k",
-      afterburner=1,
       profile="aac_low"
     )
   )
 
-aac_midfi = 
+aac_midfi =
   %ffmpeg(
     format="mpegts",
     %audio(
       channels=2,
       samplerate=44100,
-      codec="libfdk_aac",
+      codec="aac",
       b="96k",
-      afterburner=1,
       profile="aac_low"
     )
   )
 
-aac_hifi = 
+aac_hifi =
   %ffmpeg(
     format="mpegts",
     %audio(
       channels=2,
       samplerate=44100,
-      codec="libfdk_aac",
+      codec="aac",
       b="196k",
-      afterburner=1,
       profile="aac_low"
     )
   )
-
-# Defines stream infos that cannot be guessed by liqudisoap
-
-streams_info = [("aac_lofi",(78000,"mp4a.40.2","ts")),
-                ("aac_midfi",(160000,"mp4a.40.2","ts")),
-                ("aac_hifi",(252000,"mp4a.40.2","ts"))]
 
 # Output to HLS
 
 def segment_name(~position,~extname,stream_name) =
-  timestamp = int_of_float(gettimeofday())
+  timestamp = int_of_float(time())
   duration = 2
   "#{stream_name}_#{duration}_#{timestamp}_#{position}.ts"
 end
@@ -348,16 +339,14 @@ end
 output.file.hls(id="output_hls",
                 playlist="live.m3u8",
                 segment_duration=2.0,
-                segments=3,
-                segments_overhead=10,
+                segments=5,
+                segments_overhead=5,
                 segment_name=segment_name,
-                streams_info=streams_info,
                 on_file_change=on_file_change,
-                persist=true,
                 persist_at="state.config",
                 !hlspath,
-                [("aac_lofi",aac_lofi), 
-                 ("aac_midfi", aac_midfi), 
+                [("aac_lofi",aac_lofi),
+                 ("aac_midfi", aac_midfi),
                  ("aac_hifi", aac_hifi)],
                 radio_prod)
 
