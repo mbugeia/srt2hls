@@ -22,7 +22,7 @@ The Nginx container come with a specific configuration to serve HLS content with
 ### With docker compose
 ```bash
 mkdir hls
-sudo chown -R 2001:2000 hls
+sudo chown -R 10000:10001 hls
 sudo docker-compose up
 ```
 

@@ -1,35 +1,34 @@
 #!/usr/bin/liquidsoap
 
 # General settings
-
-set("log.level",3)
-set("log.stdout", true)
+settings.log.level.set(3)
+settings.log.stdout.set(true)
 
 # Telnet server settings
 
-set("server.telnet.bind_addr", "0.0.0.0")
-set("server.telnet.port", 8500)
-set("server.telnet", true)
+settings.server.telnet.bind_addr.set("0.0.0.0")
+settings.server.telnet.port.set(8500)
+settings.server.telnet.set(true)
 
 # Harbor HTTP server settings
-set("harbor.bind_addrs",["0.0.0.0"])
-set("harbor.max_connections",10)
-set("harbor.timeout",10.)
-set("harbor.verbose",false)
+settings.harbor.bind_addrs.set(["0.0.0.0"])
+settings.harbor.max_connections.set(10)
+settings.harbor.timeout.set(10.)
+settings.harbor.verbose.set(false)
 
 # Prometheus settings
-set("prometheus.server",true)
-set("prometheus.server.port",9090)
+settings.prometheus.server.set(true)
+settings.prometheus.server.port.set(9090)
 
 # Audio settings
 
-set("frame.audio.samplerate",44100)
-set("frame.audio.channels",2)
-set("audio.converter.samplerate.libsamplerate.quality","fast")
+settings.frame.audio.samplerate.set(44100)
+settings.frame.audio.channels.set(2)
+settings.audio.converter.samplerate.libsamplerate.quality.set("fast")
 
 # Clocks settings
-set("root.max_latency",5.)
-set("clock.allow_streaming_errors",false)
+settings.root.max_latency.set(5.)
+settings.clock.allow_streaming_errors.set(false)
 
 # Retrieve configuration from environment
 
@@ -180,7 +179,7 @@ def check_is_playing(metadata) =
 end
 
 # Check output metadata to set is_playing metric
-radio_prod = on_metadata(check_is_playing, radio_prod)
+radio_prod.on_metadata(check_is_playing)
 
 # Detect blank before output
 
@@ -214,7 +213,7 @@ def http_response(level="error",msg="Unknow error",code=500) =
     log.important(label="httplog", "#{level} #{msg} #{code}")
     http.response(code=code,
                   headers=[("Content-Type","application/json")],
-                  data='{"level": #{json_of(level)}, "msg": #{json_of(msg)},"code": #{json_of(code)}}')
+                  data='{"level": #{json.stringify(level)}, "msg": #{json.stringify(msg)},"code": #{json.stringify(code)}}')
 end
 
 # Handle /get arguments
