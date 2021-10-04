@@ -28,7 +28,7 @@ sudo docker-compose up
 
 ### Local installation requirements
 
-- [Liquidsoap](https://www.liquidsoap.info) 2.0.0+ (not released yet, use master)
+- [Liquidsoap](https://www.liquidsoap.info) 2.0.0+
 - ffmpeg
 
 ## Basic usage
@@ -61,10 +61,8 @@ curl http://localhost:8080/api/get?livesource
 Requirement : ffmpeg compiled with srt support (https://johnvansickle.com/ffmpeg/ for example)
 
 ```bash
-# static file
+# live stream or static file
 ffmpeg -re -i $AUDIOFILE -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
-# live stream
-ffmpeg -i $LIVESTREAM -vn -f wav -codec:a pcm_s16le srt://127.0.0.1:10000
 ```
 
 ### Monitoring

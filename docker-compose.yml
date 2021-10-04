@@ -2,7 +2,7 @@ version: "3.0"
 
 services:
   liquidsoap:
-    image: savonet/liquidsoap:v2.0.0-rc1
+    image: savonet/liquidsoap:v2.0.0
     container_name: liquidsoap
     command: /radio/live.liq
     restart: unless-stopped
