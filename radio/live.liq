@@ -26,6 +26,11 @@ settings.frame.audio.samplerate.set(44100)
 settings.frame.audio.channels.set(2)
 settings.audio.converter.samplerate.libsamplerate.quality.set("fast")
 
+# Video settings
+set("frame.video.height",1080)
+set("frame.video.samplerate",25)
+set("frame.video.width",1920)
+
 # Clocks settings
 settings.root.max_latency.set(5.)
 settings.clock.allow_streaming_errors.set(false)
@@ -148,9 +153,14 @@ live = switch(id="switch_live",
               [(is_playing("srt1"), srt1),
               (is_playing("srt2"), srt2)])
 
+radio_preprod = fallback(id="fallback_preprod",
+                             track_sensitive=false,
+                             [live, srt1, srt2])
+
+
 radio_prod = fallback(id="fallback_prod",
                              track_sensitive=false,
-                             [live, srt1, srt2, safe_blank])
+                             [radio_preprod, safe_blank])
 
 # Get metrics on output
 latency_metric(label_values=["default","output","radio_prod"],radio_prod)
@@ -205,6 +215,50 @@ radio_prod = blank.detect(id="on_blank_radio_prod",
 
 
 ### END Radio logic
+
+### Video logic
+raw_audio_encoder = %ffmpeg(%audio.raw)
+raw_video_encoder = %ffmpeg(%video.raw)
+
+raw_audio = ffmpeg.raw.audio(raw_audio_encoder, radio_preprod)
+
+def make_video(s) =
+  def mkfilter(graph) =
+    s = ffmpeg.filter.audio.input(graph, s)
+    s = ffmpeg.filter.showspectrum(
+          graph,
+          s,
+          size="1920x1080",
+          mode=1,
+          slide=1,
+          scale=2,
+          color=1,
+          saturation=0.2
+        )
+    ffmpeg.filter.video.output(graph, s)
+  end
+  ffmpeg.filter.create(mkfilter)
+end
+
+video_main = make_video(raw_audio)
+
+#video_fallback = mksafe(drop_audio(video.external.testsrc()))
+
+video_fallback = video.add_text.native("No audio", blank())
+
+video_fallback = ffmpeg.raw.video(raw_video_encoder, video_fallback)
+
+video_prod = 
+  fallback(
+    id="fallback_video_prod",
+    track_sensitive=false,
+    [
+      video_main,
+      video_fallback
+    ]
+  )
+
+### END Video logic
 
 ### HTTP API
 
@@ -321,7 +375,25 @@ aac_hifi =
     )
   )
 
-# Output to HLS
+# Define video outputs formats
+video_mpegts = 
+  %ffmpeg(
+    format="mpegts",
+    %audio(
+      channels=2,
+      samplerate=44100,
+      codec="aac",
+      b="196k",
+      profile="aac_low"
+    ),
+    %video.raw(
+      codec="libx264",
+      b="5M",
+      flags="+global_header"
+    ),
+  )
+
+# HLS segment utils
 
 def segment_name(~position,~extname,stream_name) =
   timestamp = int_of_float(time())
@@ -334,6 +406,8 @@ def on_file_change(~state,fname) =
     log.important(label="hls", "Segment #{fname} created")
   end
 end
+
+# Output audio to HLS
 
 output.file.hls(id="output_hls",
                 playlist="live.m3u8",
@@ -348,5 +422,26 @@ output.file.hls(id="output_hls",
                  ("aac_midfi", aac_midfi),
                  ("aac_hifi", aac_hifi)],
                 radio_prod)
+
+# Output video to HLS
+
+output.file.hls(
+  id="output_video_hls",
+  playlist="video.m3u8",
+  segment_duration=2.0,
+  segments=5,
+  fallible=true,
+  segments_overhead=5,
+  segment_name=segment_name,
+  on_file_change=on_file_change,
+  persist_at="statevideo.config",
+  !hlspath,
+  [
+    ("mpegts", video_mpegts)
+  ],
+  mux_audio(
+    audio=radio_prod,
+    video_prod
+  ))
 
 ### END Outputs
